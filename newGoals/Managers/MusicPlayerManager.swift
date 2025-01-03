@@ -28,7 +28,6 @@ class MusicPlayerManager: ObservableObject {
             }
         }
     }
-    
     init() {
         loadPlaylist()
         setupAudioSession()
