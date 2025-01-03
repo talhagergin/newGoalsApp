@@ -117,14 +117,16 @@ struct GoalTemplateView: View {
             category: template.category,
             description: template.description,
             dueDate: Date().addingTimeInterval(template.suggestedDuration),
-            progress: 0,
-            targetAmount: Int(targetAmount) ?? 0,
-            currentAmount: 0,
-            isCompleted: false,
-            subGoals: template.recommendedSubGoals.map { SubGoal(title: $0, isCompleted: false) }
+            targetAmount: Int(targetAmount) ?? 0
         )
         
-        goalManager.addGoal(goal)
+        // Alt hedefleri ayrıca ekleyelim
+        var updatedGoal = goal
+        updatedGoal.subGoals = template.recommendedSubGoals.map { 
+            SubGoal(title: $0, isCompleted: false) 
+        }
+        
+        goalManager.addGoal(updatedGoal)
         dismiss()
     }
 }

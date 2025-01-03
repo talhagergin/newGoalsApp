@@ -20,7 +20,23 @@ struct GoalDetailView: View {
         ScrollView {
             VStack(spacing: 20) {
                 HeaderSection(goal: goal)
+                
+                // Streak gösterimi
+                if let streak = calculateStreak() {
+                    StreakView(consecutiveDays: streak)
+                }
+                
                 ProgressSection(goal: $goal, goalManager: goalManager)
+                
+                // Motivasyon notu
+                MotivationNote()
+                
+                // İstatistikler
+                GoalStatistics(goal: goal)
+                
+                // Paylaşım kartı
+                GoalShareCard(goal: goal)
+                
                 TagsSection(goal: $goal, newTag: $newTag)
                 DetailsSection(goal: goal)
                 RemindersSection(
@@ -93,6 +109,11 @@ struct GoalDetailView: View {
         }
         Button("İptal", role: .cancel) {}
     }
+    
+    private func calculateStreak() -> Int? {
+        let streak = goal.calculateStreak(using: goalManager.goals)
+        return streak > 0 ? streak : nil
+    }
 }
 
 // MARK: - Sections
@@ -112,11 +133,33 @@ private struct HeaderSection: View {
 private struct ProgressSection: View {
     @Binding var goal: Goal
     let goalManager: GoalManager
+    @State private var showingConfetti = false
     
     var body: some View {
         VStack {
-            CircularProgressView(goal: goal)
-            ProgressStepper(goal: $goal, goalManager: goalManager)
+            ZStack {
+                CircularProgressView(goal: goal)
+                
+                if showingConfetti {
+                    ConfettiView()
+                        .frame(width: 300, height: 300)
+                        .allowsHitTesting(false)
+                }
+            }
+            
+            ProgressStepper(goal: $goal, goalManager: goalManager) { completed in
+                if completed {
+                    withAnimation {
+                        showingConfetti = true
+                    }
+                    // 3 saniye sonra konfeti animasyonunu kapat
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation {
+                            showingConfetti = false
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -162,6 +205,7 @@ private struct CircularProgressView: View {
 private struct ProgressStepper: View {
     @Binding var goal: Goal
     let goalManager: GoalManager
+    let onComplete: (Bool) -> Void
     
     var body: some View {
         HStack {
@@ -190,13 +234,22 @@ private struct ProgressStepper: View {
     private func incrementProgress() {
         if goal.currentAmount < goal.targetAmount {
             goal.currentAmount += 1
+            if goal.currentAmount == goal.targetAmount {
+                goal.isCompleted = true
+                onComplete(true)
+            }
             goalManager.updateGoal(goal)
         }
     }
     
     private func decrementProgress() {
         if goal.currentAmount > 0 {
+            let wasCompleted = goal.isCompleted
             goal.currentAmount -= 1
+            if wasCompleted && goal.currentAmount < goal.targetAmount {
+                goal.isCompleted = false
+                onComplete(false)
+            }
             goalManager.updateGoal(goal)
         }
     }

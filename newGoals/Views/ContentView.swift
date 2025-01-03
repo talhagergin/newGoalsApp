@@ -50,6 +50,9 @@ struct ContentView: View {
                         Button(action: { showingAchievements = true }) {
                             Label("Başarılar", systemImage: "trophy.fill")
                         }
+                        NavigationLink(destination: MusicPlayerView()) {
+                            Label("Motivasyon Müzikleri", systemImage: "music.note")
+                        }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }

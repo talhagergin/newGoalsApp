@@ -9,7 +9,7 @@ struct Goal: Identifiable, Codable, Equatable {
     var progress: Double
     var targetAmount: Int
     var currentAmount: Int
-    var isCompleted: Bool
+    private var _isCompleted: Bool = false
     var tags: Set<String> = []
     var isArchived: Bool = false
     var reminders: [Reminder] = []
@@ -17,6 +17,42 @@ struct Goal: Identifiable, Codable, Equatable {
     var parentGoalId: UUID?
     var journals: [JournalEntry] = []
     var recurringReminders: [ReminderSchedule] = []
+    
+    init(
+        title: String,
+        category: GoalCategory,
+        description: String,
+        dueDate: Date,
+        progress: Double = 0,
+        targetAmount: Int,
+        currentAmount: Int = 0
+    ) {
+        self.id = UUID()
+        self.title = title
+        self.category = category
+        self.description = description
+        self.dueDate = dueDate
+        self.progress = progress
+        self.targetAmount = targetAmount
+        self.currentAmount = currentAmount
+        self._isCompleted = false
+        self.tags = []
+        self.isArchived = false
+        self.reminders = []
+        self.subGoals = []
+        self.parentGoalId = nil
+        self.journals = []
+        self.recurringReminders = []
+    }
+    
+    var isCompleted: Bool {
+        get {
+            currentAmount >= targetAmount || _isCompleted
+        }
+        set {
+            _isCompleted = newValue
+        }
+    }
     
     enum GoalCategory: String, Codable, CaseIterable {
         case health = "Sağlık"
@@ -81,4 +117,30 @@ struct SubGoal: Identifiable, Codable, Equatable {
     var id = UUID()
     var title: String
     var isCompleted: Bool
+}
+
+extension Goal {
+    func calculateStreak(using goals: [Goal]) -> Int {
+        let calendar = Calendar.current
+        var currentStreak = 0
+        let sortedGoals = goals
+            .filter { $0.category == self.category }
+            .sorted { $0.dueDate > $1.dueDate }
+        
+        var currentDate = calendar.startOfDay(for: Date())
+        
+        for goal in sortedGoals {
+            let goalDate = calendar.startOfDay(for: goal.dueDate)
+            
+            // Eğer hedef tamamlanmışsa ve tarih ardışıksa
+            if goal.isCompleted && calendar.isDate(goalDate, inSameDayAs: currentDate) {
+                currentStreak += 1
+                currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
+            } else {
+                break
+            }
+        }
+        
+        return currentStreak
+    }
 } 

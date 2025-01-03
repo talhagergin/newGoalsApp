@@ -56,10 +56,7 @@ struct AddGoalView: View {
             category: category,
             description: description,
             dueDate: dueDate,
-            progress: 0,
-            targetAmount: Int(targetAmount) ?? 0,
-            currentAmount: 0,
-            isCompleted: false
+            targetAmount: Int(targetAmount) ?? 0
         )
         goalManager.addGoal(goal)
     }
